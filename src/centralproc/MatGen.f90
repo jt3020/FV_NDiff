@@ -3,16 +3,12 @@ Module MatGen_Mod
     use Constants_Mod
     use Materials_Mod
     use Problem_Mod
-# ifdef PETSC
     use PETSc_Init_Mod
     use PETSc_Vec_Mod
     use PETSc_Mat_Mod
     use PETScSolver_Mod
-# endif
-# ifndef PETSC
     use CRS_Mod
     use Solver_Mod
-# endif
     use Output_Mod
 
     Implicit None
@@ -21,13 +17,9 @@ Module MatGen_Mod
     type, public :: t_MatGen
         Integer :: N_Regions
         Real(kind=dp), allocatable, dimension(:) :: Vecb
-# ifndef PETSC
         class(t_matrix_base), pointer :: matrix
-# endif
-# ifdef PETSC
         type(pMat) :: pMatA
         type(pVec) :: pVecb, pVecx
-# endif
     contains
         procedure, public :: Create
         procedure, public :: Solve
@@ -35,34 +27,24 @@ Module MatGen_Mod
     end type
 contains
 
-Subroutine Create(this,Problem)
+Subroutine Create(this,Geometry)
     !!Set up Problem
     class(t_MatGen) :: this
     type(t_Problem) :: Problem
-    Integer :: N_Nodes
+    Integer :: N_FVs
 
 
     !!Extract relevant data from the Problem specification
-    N_Nodes = Problem%GetN_Nodes()
-    Allocate(this%Vecb(N_Nodes))
+    N_FVs = Get_N_FiniteVolumes(Geometry)
+    Allocate(this%Vecb(N_FVs))
 
-# ifndef PETSC 
-    !! Allocate the matrix to be a CRS matrix
-    allocate(t_crs :: this%matrix)
-    !! Construct the matrix
-    call this%matrix%construct(N_Nodes, N_Nodes)
-# endif
-
-# ifdef PETSC 
     !!Initialize PETSc
     call PETSc_Init()
 
     !!Generate the required PETSc Matrices and Vectors for the problem
-    call this%pMatA%Create(N_Nodes,N_Nodes,5)
-    call this%pVecb%Create(N_Nodes)
-    call this%pVecx%Create(N_Nodes)
-# endif
-
+    call this%pMatA%Create(N_FVs,N_FVs,50)
+    call this%pVecb%Create(N_FVs)
+    call this%pVecx%Create(N_FVs)
 End Subroutine Create
 
 
@@ -98,79 +80,6 @@ Subroutine Solve(this,Material,Problem,Vecx)
         Source(ii) = Material(ii)%GetS()
     EndDo
 
-    !!Non-PETSc Implementation
-# ifndef PETSC 
-    !!Fill matrix with problem information
-    !!Loop over each region within the geometry
-    NodeID = 0
-    Do ii = 1, N_Regions
-        !!Loop over each node within the region (excluding last node)
-        Do jj = 1, RegionNodes(ii)-1
-            NodeID = NodeID + 1
-            If ((jj == 1) .AND. (ii /= 1)) Then 
-                !!First node in region (excluding first in problem)
-                Sig_a_Value = .5_dp*(Sig_a(ii) + Sig_a(ii-1))
-                Source_Value = .5_dp*(Source(ii) + Source(ii-1))
-                Delta_Value = .5_dp*(Delta(ii) + Delta(ii-1))
-                Dm1_Value = 1._dp/(3._dp*Sig_a(ii-1))
-                D_Value = 1._dp/(3._dp*(.5_dp*(Sig_a(ii) + Sig_a(ii-1))))
-                Dp1_Value = 1._dp/(3._dp*Sig_a(ii))
-            Else
-                !!General node
-                Sig_a_Value = Sig_a(ii)
-                Source_Value = Source(ii)
-                Delta_Value = Delta(ii)
-                Dm1_Value = 1._dp/(3._dp*Sig_a(ii))
-                D_Value = 1._dp/(3._dp*Sig_a(ii))
-                Dp1_Value = 1._dp/(3._dp*Sig_a(ii))
-            EndIf
-            a = -(.5_dp)*((D_Value+Dm1_Value)/(Delta_Value**2))
-            b = Sig_a_Value + (.5_dp*((Dp1_Value+(2._dp*D_Value)+Dm1_Value)/(Delta_Value**2)))
-            c = -(.5_dp)*((Dp1_Value+D_Value)/(Delta_Value**2))
-            If (NodeID /= 1) Then
-                call this%matrix%set(NodeID,NodeID-1,a)
-            EndIf
-            call this%matrix%set(NodeID,NodeID,b)
-            call this%matrix%set(NodeID,NodeID+1,c)
-            this%Vecb(NodeID) = Source_Value
-
-        EndDo 
-    EndDo
-    !!Final Node
-    NodeID = NodeID + 1
-    Sig_a_Value = Sig_a(N_Regions)
-    Source_Value = Source(N_Regions)
-    Delta_Value = Delta(N_Regions)
-    Dm1_Value = 1._dp/(3._dp*Sig_a(N_Regions))
-    D_Value = 1._dp/(3._dp*Sig_a(N_Regions))
-    Dp1_Value = 1._dp/(3._dp*Sig_a(N_Regions))
-
-    a = -(.5_dp)*((D_Value+Dm1_Value)/(Delta_Value**2))
-    b = Sig_a_Value + (.5_dp*((Dp1_Value+(2._dp*D_Value)+Dm1_Value)/(Delta_Value**2)))
-    call this%matrix%set(NodeID,NodeID-1,a)
-    call this%matrix%set(NodeID,NodeID,b)
-    this%Vecb(NodeID) = Source_Value
-
-    !!Boundary Conditions
-    If (Boundary_Conditions(1) == 0) Then
-        call this%matrix%set(1,1,(1E2_dp*this%matrix%get(1,1)))
-    ElseIf (Boundary_Conditions(1) == 1) Then 
-        call this%matrix%set(1,2,(2._dp*this%matrix%get(1,2)))
-    EndIf
-    If (Boundary_Conditions(2) == 0) Then
-        call this%matrix%set(NodeID,NodeID,(1E2_dp*this%matrix%get(NodeID,NodeID)))
-    ElseIf (Boundary_Conditions(2) == 1) Then 
-        call this%matrix%set(NodeID,NodeID-1,(2._dp*this%matrix%get(NodeID,NodeID-1)))
-    EndIf
-
-    !!Solve the problem
-    call BCG_Solve(this%matrix,this%Vecb,N_Nodes,Vecx)
-    
-# endif
-
-
-    !PETSc Implementation
-# ifdef PETSC  
     !!Fill PETSc Matrices and Vectors with problem information
     !!Loop over each region within the geometry
     NodeID = 0
@@ -256,7 +165,6 @@ Subroutine Solve(this,Material,Problem,Vecx)
     !!Solve the problem
     call PETSc_Solve(this%pMatA,this%pVecb,this%pVecx)
     call this%pVecx%ConvFrom(Vecx)
-# endif
 
 
 End Subroutine Solve
@@ -270,17 +178,10 @@ Subroutine Destroy(this,Flux)
     If(Allocated(Flux)) Deallocate(Flux)
     If(Allocated(this%Vecb)) Deallocate(this%Vecb)
 
-# ifndef PETSC 
-    call this%matrix%destroy()
-    
-# endif
-
-# ifdef PETSC 
     !!Destroy the PETSc Matrices and Vectors
     call this%pMatA%Destroy()
     call this%pVecb%Destroy()
     call this%pVecx%Destroy()
-# endif
 
 End Subroutine Destroy
 

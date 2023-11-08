@@ -40,11 +40,10 @@ contains
     type(t_Geometry), intent(inout) :: this
     type(t_Problem), intent(in) :: Problem
     !! Local variables
-    integer :: ii, jj, kk, FV_ID
-    integer :: N_x, N_y, N_Total
-    integer :: MaterialID
-    real(kind=dp) :: Volume
-    real(kind=dp) :: dx,dy
+    integer :: ii, jj, FV_ID
+    integer :: N_x, N_y, N_Total, N_regions 
+    integer :: MaterialID, Region
+    real(kind=dp) :: Volume, dx, dy, Sys_x, Sys_y, Origin(2)
 
     !! Get number of finite volumes in system
     N_x = Get_Refinement_x(Problem)
@@ -56,8 +55,7 @@ contains
     !! Get system size and origin
     Sys_x = Get_System_Size_x(Problem)
     Sys_y = Get_System_Size_y(Problem)
-    Sys_x0 = Get_System_Origin_x(Problem)
-    Sys_y0 = Get_System_Origin_y(Problem)
+    Origin = Get_Origin(Problem)
 
     !! Loop over the finite volumes and fill data
     !! Loop over the regions
@@ -76,9 +74,12 @@ contains
           this%FiniteVolumes(FV_ID)%dy = Sys_y / (N_y*N_Regions)
           this%FiniteVolumes(FV_ID)%Volume = this%FiniteVolumes(FV_ID)%dx * this%FiniteVolumes(FV_ID)%dy
           !! Central Position
-          this%FiniteVolumes(FV_ID)%CentralPos(0) = Sys_x0 + ((jj-1) * this%FiniteVolumes(FV_ID)%dx) + (0.5_dp * this%FiniteVolumes(FV_ID)%dx)
-          this%FiniteVolumes(FV_ID)%CentralPos(1) = Sys_y0 + ((ii-1) * this%FiniteVolumes(FV_ID)%dy) + (0.5_dp * this%FiniteVolumes(FV_ID)%dy) &
+          this%FiniteVolumes(FV_ID)%CentralPos(0) = Origin(1) + ((jj-1) * this%FiniteVolumes(FV_ID)%dx) + (0.5_dp * this%FiniteVolumes(FV_ID)%dx)
+          this%FiniteVolumes(FV_ID)%CentralPos(1) = Origin(2) + ((ii-1) * this%FiniteVolumes(FV_ID)%dy) + (0.5_dp * this%FiniteVolumes(FV_ID)%dy) &
                                                            + ((Region-1) * N_y * this%FiniteVolumes(FV_ID)%dy)
+          !! Add some if statements here to check
+          !! for boundary conditions and implement them in the 
+          !! finite volume type
         end do
       end do
     end do

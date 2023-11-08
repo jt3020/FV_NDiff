@@ -1,6 +1,9 @@
 ==================================================
 Geometry - Currently only assumes variation in y direction (axially symmetric)
 
+Materials: - Integer number of materials in problem 
+2
+
 Regions: - Integer number of regions in the problem
 2
 
@@ -9,8 +12,15 @@ Boundaries: - Real number positions of the boundaries between the regions (one p
 0.5
 1.0
 
+Length_x: - Length of system in x direction 
+1.0
+
+Length_y: - Length of system in y direction
+1.0 
+
 Refinement_x: Integer number of volumes in x per region (axially)
 5
+
 Refinement_y: Integer number of volumes in y per region (vertically)
 5
 
@@ -31,9 +41,6 @@ Simulation
 Problem Type - Fixed or Eigenvalue
 Fixed
 
-Solve Direction - Forward, Backward or Combined
-Forward
-
 Preconditioner - N[None], J[Jacobi], C[Cholesky], L[Incomp. LU], H[Hypre], S[SOR], G[GAMG]
 C
 
@@ -48,44 +55,20 @@ Properties - Sigma_a, nu*Sigma_f, Sigma_s, S_0
 Material
 Mat_A
 
-Sigma_t
-2.0
-
 Sigma_a
 0.1
 
-nu*Sigma_f
-0.0
-
-Sigma_s
-1.9
-
 S_0
-1.0
-
-Spectrum
 1.0
 
 ------------------
 Material
 Mat_B
 
-Sigma_t
-1.0
-
 Sigma_a
 0.05
 
-nu*Sigma_f
-0.0
-
-Sigma_s
-0.95
-
 S_0
-1.0
-
-Spectrum
 1.0
 
 End_Properties

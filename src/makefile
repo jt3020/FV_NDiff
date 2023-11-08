@@ -51,12 +51,17 @@ warning:   LD_FLAGS = $(LD_FLAGS_WARNING)
 #Set the objects
 
 OBJS= stdlib/Constants.o \
+ stdlib/Errors.o \
+ stdlib/Progress.o \
+ stdlib/StdLib.o \
+ stdlib/Timing.o \
  PETSc/PETSc_Init.o \
  PETSc/PETSc_Vec.o \
  PETSc/PETSc_Mat.o \
  PETSc/PETSc_Ksp.o \
  inoutproc/Materials.o \
  inoutproc/Problem.o \
+ inoutproc/Geometry.o \
  inoutproc/Output.o \
  centralproc/Matrix_Base.o \
  centralproc/CRS.o \
