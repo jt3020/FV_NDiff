@@ -14,8 +14,17 @@ Module Geometry_Mod
   public Create_Geometry
   public Destroy_Geometry
 
-  !! Get some information about the geometry
+  !! Get information about the geometry
   public Get_N_FiniteVolumes
+
+  !! Get information about a specific finite volume
+  public Get_FV_ID
+  public Get_FV_MaterialID
+  public Get_FV_Neighbours
+  public Get_FV_Volume
+  public Get_FV_dx
+  public Get_FV_dy
+  public Get_FV_CentralPos
 
   !! The geometry type
   type t_Geometry
@@ -26,7 +35,9 @@ Module Geometry_Mod
 
   !! The finite volume type
   type t_FiniteVolumes
+    integer :: FV_ID                                                 !! ID of the finite volume
     integer :: MaterialID                                            !! Material ID of the finite volume
+    integer :: Neighbours(4)                                         !! Neighbour FV IDs of the finite volume
     real(kind=dp) :: Volume                                          !! Volume of the finite volume
     real(kind=dp) :: dx                                              !! Length of the finite volume in the x-direction
     real(kind=dp) :: dy                                              !! Length of the finite volume in the y-direction
@@ -67,6 +78,7 @@ contains
         do jj = 1, N_x 
           !! Update FV_ID
           FV_ID = FV_ID + 1
+          this%FiniteVolumes(FV_ID)%FV_ID = FV_ID
           !! Material ID
           this%FiniteVolumes(FV_ID)%MaterialID = Region
           !! Dimensions and volume
@@ -77,9 +89,31 @@ contains
           this%FiniteVolumes(FV_ID)%CentralPos(0) = Origin(1) + ((jj-1) * this%FiniteVolumes(FV_ID)%dx) + (0.5_dp * this%FiniteVolumes(FV_ID)%dx)
           this%FiniteVolumes(FV_ID)%CentralPos(1) = Origin(2) + ((ii-1) * this%FiniteVolumes(FV_ID)%dy) + (0.5_dp * this%FiniteVolumes(FV_ID)%dy) &
                                                            + ((Region-1) * N_y * this%FiniteVolumes(FV_ID)%dy)
-          !! Add some if statements here to check
-          !! for boundary conditions and implement them in the 
-          !! finite volume type
+          !! Neighbours (0 if boundary)
+          !! Left
+          if (jj == 1) then
+            this%FiniteVolumes(FV_ID)%Neighbours(1) = 0
+          else
+            this%FiniteVolumes(FV_ID)%Neighbours(1) = FV_ID - 1
+          end if
+          !! Right
+          if (jj == N_x) then
+            this%FiniteVolumes(FV_ID)%Neighbours(2) = 0
+          else
+            this%FiniteVolumes(FV_ID)%Neighbours(2) = FV_ID + 1
+          end if
+          !! Bottom
+          if (ii == 1) then
+            this%FiniteVolumes(FV_ID)%Neighbours(3) = 0
+          else
+            this%FiniteVolumes(FV_ID)%Neighbours(3) = FV_ID - N_x
+          end if
+          !! Top
+          if (ii == N_y) then
+            this%FiniteVolumes(FV_ID)%Neighbours(4) = 0
+          else
+            this%FiniteVolumes(FV_ID)%Neighbours(4) = FV_ID + N_x
+          end if
         end do
       end do
     end do
@@ -105,5 +139,68 @@ contains
 
     res = this%N_FiniteVolumes
   End Function Get_N_FiniteVolumes
+
+  Function Get_FV_ID(this,FV) result(res)
+    !! Get the ID of a finite volume
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    integer :: res
+
+    res = this%FiniteVolumes(FV)%FV_ID
+  End Function Get_FV_ID
+
+  Function Get_FV_MaterialID(this,FV) result(res)
+    !! Get the material ID of a finite volume
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    integer :: res
+
+    res = this%FiniteVolumes(FV)%MaterialID
+  End Function Get_FV_MaterialID
+
+  Function Get_FV_Neighbours(this,FV) result(res)
+    !! Get the neighbours of a finite volume
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    integer, dimension(4) :: res
+
+    res = this%FiniteVolumes(FV)%Neighbours
+  End Function Get_FV_Neighbours
+
+  Function Get_FV_Volume(this,FV) result(res)
+    !! Get the volume of a finite volume
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    real(kind=dp) :: res
+
+    res = this%FiniteVolumes(FV)%Volume
+  End Function Get_FV_Volume
+
+  Function Get_FV_dx(this,FV) result(res)
+    !! Get the length of a finite volume in the x-direction
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    real(kind=dp) :: res
+
+    res = this%FiniteVolumes(FV)%dx
+  End Function Get_FV_dx
+
+  Function Get_FV_dy(this,FV) result(res)
+    !! Get the length of a finite volume in the y-direction
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    real(kind=dp) :: res
+
+    res = this%FiniteVolumes(FV)%dy
+  End Function Get_FV_dy
+
+  Function Get_FV_CentralPos(this,FV) result(res)
+    !! Get the central position of a finite volume
+    type(t_Geometry), intent(in) :: this
+    integer, intent(in) :: FV
+    real(kind=dp), dimension(2) :: res
+
+    res = this%FiniteVolumes(FV)%CentralPos
+  End Function Get_FV_CentralPos
 
 End Module
