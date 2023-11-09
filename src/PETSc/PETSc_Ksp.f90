@@ -35,7 +35,6 @@ Subroutine Create_PETSc_Ksp(this,A,PC_type,Rel_Tol,Abs_Tol,Max_Its)
   this%Rel_Tol = Rel_Tol
   this%Abs_Tol = Abs_Tol
   this%Max_Its = Max_Its
-  ! call omp_set_num_threads(4)
   call KSPCreate(MPI_COMM_SELF,this%ksp,ierr)
   call KSPSetOperators(this%ksp,A%mat,A%mat,ierr)
   call KSPGetPC(this%ksp,Precon,ierr)
@@ -55,12 +54,8 @@ Subroutine Create_PETSc_Ksp(this,A,PC_type,Rel_Tol,Abs_Tol,Max_Its)
   case('N')
     call PCSetType(precon,PCNONE,ierr)
   end select
-  ! call KSPSetType(this%KSP,'KSPRICHARDSON')
-  ! PetscCallA(KSPSetType(this%ksp,'python',ierr))
   call KSPSetTolerances(this%ksp,this%Rel_Tol,this%Abs_Tol,PETSC_DEFAULT_REAL,this%Max_Its,ierr)
   call KSPSetFromOptions(this%ksp,ierr)
-
-  if (.false.) print *, 'false'
 
 End Subroutine Create_PETSc_Ksp
 
@@ -137,8 +132,6 @@ Subroutine Solve_PETSc_Ksp(this,b,x)
   Class(pSol) :: this
   class(pVec) :: b,x
   PetscErrorCode ierr
-  ! call omp_set_num_threads(4)
-  print *, 'Solving!' 
   call KSpSolve(this%ksp,b%vec,x%vec,ierr); CHKERRQ(ierr)
 #   ifdef DEBUG
       call this%analysis()

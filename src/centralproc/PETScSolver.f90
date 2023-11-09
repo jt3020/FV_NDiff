@@ -16,17 +16,17 @@ Module PETScSolver_Mod
     end type
 contains
 
-Subroutine PETSc_Solve(pMatA,pVecb,pVecx)
+Subroutine PETSc_Solve(pMatA,pVecb,pVecx,PC_Type)
     type(pMat) :: pMatA
     type(pVec) :: pVecb, pVecx
     type(pSol) :: pSolve
+    character(len=1) :: PC_Type
     
-    call pSolve%Create(pMatA,'N',1E-5_dp,1E-5_dp,100000)
+    call pSolve%Create(pMatA,PC_Type,1E-8_dp,1E-8_dp,100000)
     call pSolve%Solve(pVecb,pVecx)
     call pVecx%Assemble()
 
     call pSolve%Destroy()
-
 End Subroutine PETSc_Solve
 
 

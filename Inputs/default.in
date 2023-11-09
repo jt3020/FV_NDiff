@@ -25,12 +25,12 @@ Refinement_y: Integer number of volumes in y per region (vertically)
 5
 
 Material Names: 1 per line, from y=0 to y=y_max
-Mat_A
-Mat_B
+1
+2
 
 Boundary_Conditions: - Zero, Reflective, Vacuum
-Left: Reflective
-Right: Reflective
+Left: Zero
+Right: Zero
 Bottom: Reflective
 Top: Reflective
 
@@ -52,24 +52,24 @@ End Simulation
 Properties - Sigma_a, nu*Sigma_f, Sigma_s, S_0
 
 ------------------
-Material
-Mat_A
+Material ID
+1
 
 Sigma_a
-0.1
+1.0
 
 S_0
 1.0
 
 ------------------
 Material
-Mat_B
+2
 
 Sigma_a
-0.05
+1.0
 
 S_0
-1.0
+2.0
 
 End_Properties
 ==================================================

@@ -9,15 +9,14 @@ Module MatGen_Mod
     use PETScSolver_Mod
     use CRS_Mod
     use Solver_Mod
-    use Output_Mod
     use Geometry_Mod
+    use Progress_Mod
 
     Implicit None
 
     !!Discretises the problem and sets up the system of equations which can then be solved
     type, public :: t_MatGen
         Integer :: N_Regions
-        Real(kind=dp), allocatable, dimension(:) :: Vecb
         class(t_matrix_base), pointer :: matrix
         type(pMat) :: pMatA
         type(pVec) :: pVecb, pVecx
@@ -36,7 +35,6 @@ Subroutine Create(this,Geometry)
 
     !!Extract relevant data from the Problem specification
     N_Els = Get_N_FiniteVolumes(Geometry)
-    Allocate(this%Vecb(N_Els))
 
     !!Initialize PETSc
     call PETSc_Init()
@@ -56,10 +54,12 @@ Subroutine Solve(this,Geometry,Material,Problem,Vecx)
     type(t_Problem) :: Problem
     Integer :: ii, jj, N_Regions, N_Els, Region, Ref_x, Ref_y, FV_ID
     Integer :: MaterialID, N_Materials, Side, NeighbourMaterialID
-    Integer :: Boundary_Conditions(4), Neighbours(4)
+    Integer :: Boundary_Conditions(4), Neighbours(4), Interval
     Real(kind=dp) :: A_Value, TotalCurrent, b_Value, Volume
     Real(kind=dp) :: Current(4), CentralPos(2), dx, dy, Xi, Eta
     Real(kind=dp), allocatable, dimension(:) :: Boundary_Pos, Sig_a, Source, D, Vecx
+    character(len=1) :: PC_Type
+    character(len=128) :: Description
 
 
     !!Extract relevant data from the Problem specification
@@ -67,7 +67,16 @@ Subroutine Solve(this,Geometry,Material,Problem,Vecx)
     N_Materials = Get_N_Materials(Problem)
     Boundary_Conditions = Get_Boundary_Conditions(Problem)
     N_Els = Get_N_FiniteVolumes(Geometry)
+    Ref_x = Get_Refinement_x(Problem)
+    Ref_y = Get_Refinement_y(Problem)
     Allocate(Vecx(N_Els))
+
+    !! Progress bar
+    Interval = N_Els
+    !! Prevents progress bar from slowing down large problems
+    If (Interval > 100) Interval = N_Els/100
+    Description = 'Generating System of Equations'
+    call Progress_Start_Numeric(Description,N_Els)
 
 
     !!Extract relevant material data from the materials class
@@ -105,7 +114,7 @@ Subroutine Solve(this,Geometry,Material,Problem,Vecx)
                 Current = 0._dp
                 Do Side = 1, 4
                     !! Check if boundary
-                    If (Neighbours(Side) /= 0) Cycle 
+                    If (Neighbours(Side) == 0) Cycle 
                     !! Get Material of Neighbour
                     NeighbourMaterialID = Get_FV_MaterialID(Geometry,Neighbours(Side))
                     !! Get Xi and Eta for calc
@@ -130,9 +139,16 @@ Subroutine Solve(this,Geometry,Material,Problem,Vecx)
                 call this%pMatA%InsertVal(FV_ID,FV_ID,A_Value)
                 call this%pVecb%Insert(FV_ID,b_Value)
 
+                !! Update progress output (if +1%)
+                if (mod(FV_ID,Interval) == 0) then
+                    call Progress_Update_Numeric(Description,FV_ID,N_Els)
+                end if
+
             End Do 
         End Do 
     End Do
+
+    call Progress_End_Numeric(Description,N_Els)
     
     !! Apply boudnary conditions
     !! Loop over the regions
@@ -158,16 +174,15 @@ Subroutine Solve(this,Geometry,Material,Problem,Vecx)
             End Do 
         End Do 
     End Do
-    
+
     !!Assemble PETSc Matrix and Vector
-    call this%pVecb%ConvTo(this%Vecb)
     call this%pMatA%Assemble()
     call this%pVecb%Assemble()
 
     !!Solve the problem
-    call PETSc_Solve(this%pMatA,this%pVecb,this%pVecx)
+    PC_Type = Get_Preconditioner(Problem)
+    call PETSc_Solve(this%pMatA,this%pVecb,this%pVecx,PC_Type)
     call this%pVecx%ConvFrom(Vecx)
-
 
 End Subroutine Solve
 
@@ -178,7 +193,6 @@ Subroutine Destroy(this,Flux)
     Real(kind=dp), allocatable, dimension(:) :: Flux
 
     If(Allocated(Flux)) Deallocate(Flux)
-    If(Allocated(this%Vecb)) Deallocate(this%Vecb)
 
     !!Destroy the PETSc Matrices and Vectors
     call this%pMatA%Destroy()

@@ -3,6 +3,7 @@ Module Geometry_Mod
   use Constants_Mod
   use Problem_Mod
   use StdLib_Mod
+  use Progress_Mod
 
   implicit none
   private
@@ -53,8 +54,9 @@ contains
     !! Local variables
     integer :: ii, jj, FV_ID
     integer :: N_x, N_y, N_Total, N_regions 
-    integer :: MaterialID, Region
+    integer :: MaterialID, Region, Interval
     real(kind=dp) :: Volume, dx, dy, Sys_x, Sys_y, Origin(2)
+    character(len=128) :: Description
 
     !! Get number of finite volumes in system
     N_x = Get_Refinement_x(Problem)
@@ -62,6 +64,13 @@ contains
     N_Regions = Get_N_Regions(Problem)
     N_Total = N_Regions * N_x * N_y
     allocate(this%FiniteVolumes(N_Total))
+
+    !! Progress bar
+    Interval = N_Total
+    !! Prevents progress bar from slowing down large problems
+    If (Interval > 100) Interval = N_Total/100
+    Description = 'Creating Finite Volumes'
+    call Progress_Start_Numeric(Description,N_Total)
 
     !! Get system size and origin
     Sys_x = Get_System_Size_x(Problem)
@@ -114,12 +123,17 @@ contains
           else
             this%FiniteVolumes(FV_ID)%Neighbours(4) = FV_ID + N_x
           end if
+          !! Update progress output (if +1%)
+          if (mod(FV_ID,Interval) == 0) then
+            call Progress_Update_Numeric(Description,FV_ID,N_Total)
+          end if
         end do
       end do
     end do
 
     this%N_FiniteVolumes = N_Total
     this%initialised = .True.
+    call Progress_End_Numeric(Description,N_Total)
 
   End Subroutine Create_Geometry
 

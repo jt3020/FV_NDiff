@@ -42,7 +42,7 @@ Subroutine Create_Problem(this,Material)
   type(t_material), allocatable, dimension(:) :: Material
   Integer :: ii
   Integer, parameter :: InputFile = 101
-  Character(len=128) :: String_Read
+  Character(len=128) :: String_Read, Boundary_Name
   real(kind=dp) :: Sigma_a, Source
 
 
@@ -115,7 +115,7 @@ Subroutine Create_Problem(this,Material)
   !!Read in the material names for each region - to be used to match later
   Allocate(this%Region_Materials(this%N_Regions))
   String_Read = ''
-  Do While (String_Read .NE. 'Materials:')
+  Do While (String_Read .NE. 'Material')
     Read(InputFile,*) String_Read
   EndDo
   Do ii = 1, this%N_Regions
@@ -127,22 +127,24 @@ Subroutine Create_Problem(this,Material)
   Do While (String_Read .NE. 'Boundary_Conditions:')
     Read(InputFile,*) String_Read
   EndDo
-  Do ii = 1, 4
-    Read(InputFile,*) String_Read
-    If (String_Read == 'Zero') Then 
+  Do ii = 1, 4 
+    Read(InputFile,*) String_Read, Boundary_Name
+    If (Boundary_Name == 'Zero') Then 
       this%Boundary_Conditions(ii) = 0
-    ElseIf (String_Read == 'Reflective') Then 
+    ElseIf (Boundary_Name == 'Reflective') Then 
       this%Boundary_Conditions(ii) = 1
-    ElseIf (String_Read == 'Vacuum') Then 
+    ElseIf (Boundary_Name == 'Vacuum') Then 
       this%Boundary_Conditions(ii) = 2
     Else 
       call Stop_Error('Problem - ReadInput: Boundary Condition not recognised')
     EndIf
   EndDo
 
-  print *, ' InputFile: Geometry Specification Complete'
-
   !! Simulation Specification
+  String_Read = ''
+  Do While (String_Read .NE. 'Simulation')
+    Read(InputFile,*) String_Read
+  EndDo
   !! Read in the problem type
   String_Read = ''
   Do While (String_Read .NE. 'Problem')
@@ -174,9 +176,10 @@ Subroutine Create_Problem(this,Material)
   EndDo
   Read(InputFile,*) this%N_Groups
 
-  print *, ' InputFile: Simulation Specification Complete'
-
   !! Material Specification
+  Do While (String_Read .NE. 'Properties')
+    Read(InputFile,*) String_Read
+  EndDo
   !! Read in the material data
   Do ii = 1, this%N_Materials
     !! Loop to next material
@@ -200,8 +203,6 @@ Subroutine Create_Problem(this,Material)
     Read(InputFile,*) Source
     Call Material(ii)%SetProps(Sigma_a, Source)
   End Do 
-
-  print *, ' InputFile: Material Specification Complete'
 
   Close(InputFile)
 

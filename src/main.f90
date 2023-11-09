@@ -11,6 +11,7 @@ Program Main
   use CRS_Mod
   use Solver_Mod
   use Geometry_Mod
+  use Timing_Mod
   
   Implicit None
   
@@ -21,27 +22,29 @@ Program Main
   Real(kind=dp) :: time_start, time_stop
   Real(kind=dp), allocatable, dimension(:) :: Flux
 
-  call cpu_time(time_start)
+  time_start = Get_Time_Local()
 
   !! Read in problem
   call Problem%Create_Problem(Material)
+  Write(*,'(g0)') "- Problem Created -"
 
   !! Create Geometry
   call Create_Geometry(Geometry,Problem)
+  Write(*,'(g0)') "- Geometry Created -"
 
-  !! Create the system of equations
+  !! Create and solve the system of equations
   call MatGen%Create(Geometry)
-
-  !! Solve the system of equations
   call MatGen%Solve(Geometry,Material,Problem,Flux)
+  Write(*,'(g0)') "- NDE Solved -"
 
   !! Destroy problem
   call MatGen%Destroy(Flux)
   call Problem%Destroy_Problem(Material)
+  Write(*,'(g0)') "- Problem Destroyed -"
 
-  call  cpu_time(time_stop)
+  time_stop = Get_Time_Local()
 
-  Write(*,'(g0)',advance='no') " >Problem Solved in:"
+  Write(*,'(g0)',advance='no') "- Code Executed in:"
   Write(*,'(E14.6)',advance='no') time_stop-time_start
-  Write(*,'(g0)') " seconds"
+  Write(*,'(g0)') " seconds -"
 End program
