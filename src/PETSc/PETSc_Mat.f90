@@ -31,68 +31,82 @@ Module PETSc_Mat_Mod
 contains
 
 
-Subroutine Create_PETSc_Mat(This,N_row,N_col,N_nz)
-  Class(PMat), intent(inout) :: This
+Subroutine Create_PETSc_Mat(this,N_row,N_col,N_nz)
+  Class(PMat), intent(inout) :: this
   Integer :: N_row, N_col, N_nz
+  Integer, dimension(N_nz) :: N_nz_arr
   PetscErrorCode ierr
-  call MatCreateSeqAIJ(PETSC_COMM_SELF,N_row,N_col,N_nz,PETSC_NULL_INTEGER,This%mat,ierr)
+  call MatCreateSeqAIJ(PETSC_COMM_SELF,N_row,N_col,N_nz,PETSC_NULL_INTEGER,this%mat,ierr)
+  ! N_nz_arr = N_nz
+  ! 
+  ! call MatCreate(PETSC_COMM_WORLD,this%mat,ierr)
+  ! CALL MatSetSizes(this%mat,PETSC_DECIDE,PETSC_DECIDE,N_row,N_col,ierr)
+  
+  ! CALL MatSetFromOptions(this%mat,ierr)
+  ! CALL MatSetUp(this%mat,ierr)
+
+  ! CALL MatSetType(this%mat,MATSEQAIJ,ierr)
+  ! CALL MatSeqAIJSetPreallocation(this%mat,PETSC_DECIDE,PETSC_NULL_INTEGER,ierr)
+  ! Create, Set Size, SetType, SeqIJ
+
 End Subroutine Create_PETSc_Mat
 
 
-Subroutine Destroy_PETSc_Mat(This)
-  Class(PMat), intent(inout) :: This
+Subroutine Destroy_PETSc_Mat(this)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
-  Call MatDestroy(This%mat,ierr); CHKERRQ(ierr)
+  Call MatDestroy(this%mat,ierr); CHKERRQ(ierr)
 End Subroutine Destroy_PETSc_Mat
 
 
-Subroutine SwitchAssemble_PETSc_Mat(This)
-  Class(PMat), intent(inout) :: This
+Subroutine SwitchAssemble_PETSc_Mat(this)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
-  call MatAssemblyBegin(This%mat,MAT_FLUSH_ASSEMBLY,ierr)
-  call MatAssemblyEnd(This%mat,MAT_FLUSH_ASSEMBLY,ierr)
+  call MatAssemblyBegin(this%mat,MAT_FLUSH_ASSEMBLY,ierr)
+  call MatAssemblyEnd(this%mat,MAT_FLUSH_ASSEMBLY,ierr)
 End Subroutine SwitchAssemble_PETSc_Mat
 
 
-Subroutine Assemble_PETSc_Mat(This)
-  Class(PMat), intent(inout) :: This
+Subroutine Assemble_PETSc_Mat(this)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
-  call MatAssemblyBegin(This%mat,MAT_FINAL_ASSEMBLY,ierr)
-  call MatAssemblyEnd(This%mat,MAT_FINAL_ASSEMBLY,ierr)
+  call MatAssemblyBegin(this%mat,MAT_FINAL_ASSEMBLY,ierr)
+  call MatAssemblyEnd(this%mat,MAT_FINAL_ASSEMBLY,ierr)
 End Subroutine Assemble_PETSc_Mat
 
 
-Subroutine InsertVal_PETSc_Mat(This,V_row,V_col,Value)
-  Class(PMat), intent(inout) :: This
+Subroutine InsertVal_PETSc_Mat(this,V_row,V_col,Value)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Integer :: V_row, V_Col
   Real(kind=dp) :: Value
-  If ((V_row .LT. 1) .OR. (V_col .LT. 1)) Then
+  If ((V_row < 1) .OR. (V_col < 1)) Then
     Write(*,*) "### Error ###"
-    Write(*,*) "Inserting Value outside of bounds"
+    Write(*,*) "Inserting pMat Value outside of bounds"
     Stop
   EndIf
   !!Convert the row and col integers to P format
-  call MatSetValue(This%mat,V_row-1,V_Col-1,Value,INSERT_VALUES,ierr)
+  call MatSetValue(this%mat,V_row-1,V_Col-1,Value,INSERT_VALUES,ierr)
 End Subroutine InsertVal_PETSc_Mat
 
 
-Subroutine AddVal_PETSc_Mat(This,V_row,V_col,Value)
-  Class(PMat), intent(inout) :: This
+Subroutine AddVal_PETSc_Mat(this,V_row,V_col,Value)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Integer :: V_row, V_Col
   Real(kind=dp) :: Value
-  If ((V_row .LT. 1) .OR. (V_col .LT. 1)) Then
+  If ((V_row < 1) .OR. (V_col < 1)) Then
     Write(*,*) "### Error ###"
-    Error Stop "Inserting Value outside of bounds"
+    Write(*,*) "Adding pMat Value outside of bounds"
+    Stop
   EndIf
   !!Convert the row and col integers to P format
-  call MatSetValue(This%mat,V_row-1,V_col-1,Value,ADD_VALUES,ierr)
+  call MatSetValue(this%mat,V_row-1,V_col-1,Value,ADD_VALUES,ierr)
 End Subroutine AddVal_PETSc_Mat
 
 
-Subroutine InsertMat_PETSc_Mat(This,V_rows,V_cols,Values)
-  Class(PMat), intent(inout) :: This
+Subroutine InsertMat_PETSc_Mat(this,V_rows,V_cols,Values)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Integer :: N_rows, N_cols
   Integer :: V_rows(:), V_cols(:)
@@ -102,15 +116,15 @@ Subroutine InsertMat_PETSc_Mat(This,V_rows,V_cols,Values)
   !!Temporarily convert the row and col integers to P format
   V_rows(:) = V_rows(:) - 1
   V_cols(:) = V_cols(:) -1
-  call MatSetValues(This%mat,N_rows,V_rows,N_cols,V_cols,Values,INSERT_VALUES,ierr)
+  call MatSetValues(this%mat,N_rows,V_rows,N_cols,V_cols,Values,INSERT_VALUES,ierr)
   !!Revert to F format
   V_rows(:) = V_rows(:) + 1
   V_cols(:) = V_cols(:) + 1
 End Subroutine InsertMat_PETSc_Mat
 
 
-Subroutine AddMat_PETSc_Mat(This,V_rows,V_cols,Values)
-  Class(PMat), intent(inout) :: This
+Subroutine AddMat_PETSc_Mat(this,V_rows,V_cols,Values)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Integer :: N_rows, N_cols
   Integer :: V_rows(:), V_cols(:)
@@ -120,38 +134,32 @@ Subroutine AddMat_PETSc_Mat(This,V_rows,V_cols,Values)
   !!Temporarily convert the row and col integers to P format
   V_rows(:) = V_rows(:) - 1
   V_cols(:) = V_cols(:) -1
-  call MatSetValues(This%mat,N_rows,V_rows,N_cols,V_cols,Values,ADD_VALUES,ierr)
+  call MatSetValues(this%mat,N_rows,V_rows,N_cols,V_cols,Values,ADD_VALUES,ierr)
   !!Revert to F format
   V_rows(:) = V_rows(:) + 1
   V_cols(:) = V_cols(:) + 1
 End Subroutine AddMat_PETSc_Mat
 
 
-Subroutine GetSizeMat_PETSc_Mat(This,N_rows,N_cols)
-  Class(PMat), intent(inout) :: This
+Subroutine GetSizeMat_PETSc_Mat(this,N_rows,N_cols)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Integer :: N_rows, N_cols
   call MatGetSize(this%mat,N_rows,N_cols,ierr)
 End Subroutine GetSizeMat_PETSc_Mat
 
 
-Function GetValMat_PETSc_Mat(This,V_row,V_col) Result(Value)
-  Class(PMat), intent(inout) :: This
+Function GetValMat_PETSc_Mat(this,V_row,V_col) Result(Value)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
-  Integer :: V_row, V_col
-  Real(kind=dp) :: Value
-  !!Temporarily convert the row and col integers to P format
-  V_row = V_row - 1
-  V_col = V_col - 1
-  call MatGetValues(This%mat,1,V_row,1,V_col,Value,ierr)
-  !!Revert to F format
-  V_row = V_row + 1
-  V_col = V_col + 1
+  PetscInt V_row, V_col
+  PetscScalar Value
+  call MatGetValues(this%mat,1,[V_row-1],1,[V_col-1],[Value],ierr)
 End Function GetValMat_PETSc_Mat
 
 
-Subroutine GetValsMat_PETSc_Mat(This,V_rows,V_cols,Values)
-  Class(PMat), intent(inout) :: This
+Subroutine GetValsMat_PETSc_Mat(this,V_rows,V_cols,Values)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Integer :: N_rows, N_cols
   Integer :: V_rows(:), V_cols(:)
@@ -161,41 +169,41 @@ Subroutine GetValsMat_PETSc_Mat(This,V_rows,V_cols,Values)
   !!Temporarily convert the row and col integers to P format
   V_rows(:) = V_rows(:) - 1
   V_cols(:) = V_cols(:) - 1
-  call MatGetValues(This%mat,N_rows,V_rows,N_cols,V_cols,Values,ierr)
+  call MatGetValues(this%mat,N_rows,V_rows,N_cols,V_cols,Values,ierr)
   !!Revert to F format
   V_rows(:) = V_rows(:) + 1
   V_cols(:) = V_cols(:) + 1
 End Subroutine GetValsMat_PETSc_Mat
 
 
-Subroutine MultMat_PETSc_Mat(This,In_Vec,Out_Vec)
-  Class(PMat), intent(inout) :: This
+Subroutine MultMat_PETSc_Mat(this,In_Vec,Out_Vec)
+  Class(PMat), intent(inout) :: this
   class(pVec) :: In_Vec, Out_Vec
   PetscErrorCode ierr
-  call MatMult(This%mat,In_Vec%vec,Out_Vec%vec,ierr)
+  call MatMult(this%mat,In_Vec%vec,Out_Vec%vec,ierr)
 End Subroutine MultMat_PETSc_Mat
 
 
-Subroutine MultAddMat_PETSc_Mat(This,In_Vec,Add_Vec,Out_Vec)
-  Class(PMat), intent(inout) :: This
+Subroutine MultAddMat_PETSc_Mat(this,In_Vec,Add_Vec,Out_Vec)
+  Class(PMat), intent(inout) :: this
   Class(pVec) :: In_Vec, Add_Vec, Out_Vec
   PetscErrorCode ierr
-  call MatMultAdd(This%mat,In_Vec%vec,Add_Vec%vec,Out_Vec%vec,ierr)
+  call MatMultAdd(this%mat,In_Vec%vec,Add_Vec%vec,Out_Vec%vec,ierr)
 End Subroutine MultAddMat_PETSc_Mat
 
 
-Subroutine MatView_PETSc_Mat(This)
-  Class(PMat), intent(inout) :: This
+Subroutine MatView_PETSc_Mat(this)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
-  call MatView(This%mat,PETSC_VIEWER_STDOUT_WORLD,ierr)
+  call MatView(this%mat,PETSC_VIEWER_STDOUT_WORLD,ierr)
 End Subroutine MatView_PETSc_Mat
 
 
-Subroutine Symmetry_PETSc_Mat(This,SymLog)
-  Class(PMat), intent(inout) :: This
+Subroutine Symmetry_PETSc_Mat(this,SymLog)
+  Class(PMat), intent(inout) :: this
   PetscErrorCode ierr
   Logical :: SymLog
-  call MatIsSymmetric(This%mat,1E-6_dp,SymLog,ierr)
+  call MatIsSymmetric(this%mat,1E-6_dp,SymLog,ierr)
 End Subroutine Symmetry_PETSc_Mat
 
 End Module

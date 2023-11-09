@@ -23,8 +23,8 @@ contains
 
 
 
-Subroutine Create_PETSc_Ksp(This,A,PC_type,Rel_Tol,Abs_Tol,Max_Its)
-  class(pSol) :: This
+Subroutine Create_PETSc_Ksp(this,A,PC_type,Rel_Tol,Abs_Tol,Max_Its)
+  class(pSol) :: this
   class(pMat) :: A
   PC               Precon
   PetscErrorCode ierr
@@ -32,13 +32,13 @@ Subroutine Create_PETSc_Ksp(This,A,PC_type,Rel_Tol,Abs_Tol,Max_Its)
   Integer :: Max_Its
   Character :: PC_type
 
-  This%Rel_Tol = Rel_Tol
-  This%Abs_Tol = Abs_Tol
-  This%Max_Its = Max_Its
-
-  call KSPCreate(PETSC_COMM_WORLD,This%ksp,ierr)
-  call KSPSetOperators(This%ksp,A%mat,A%mat,ierr)
-  call KSPGetPC(This%ksp,Precon,ierr)
+  this%Rel_Tol = Rel_Tol
+  this%Abs_Tol = Abs_Tol
+  this%Max_Its = Max_Its
+  ! call omp_set_num_threads(4)
+  call KSPCreate(MPI_COMM_SELF,this%ksp,ierr)
+  call KSPSetOperators(this%ksp,A%mat,A%mat,ierr)
+  call KSPGetPC(this%ksp,Precon,ierr)
   select case(PC_Type)
   case('J')
     call PCSetType(precon,PCJACOBI,ierr)
@@ -48,30 +48,39 @@ Subroutine Create_PETSc_Ksp(This,A,PC_type,Rel_Tol,Abs_Tol,Max_Its)
     call PCSetType(precon,PCILU,ierr)
   case('H')
     call PCSetType(precon,PCHYPRE,ierr)
+  case('S')
+    call PCSetType(precon,PCSOR,ierr)
+  case('G')
+    call PCSetType(precon,PCGAMG,ierr)
   case('N')
     call PCSetType(precon,PCNONE,ierr)
   end select
-  call KSPSetTolerances(This%ksp,This%Rel_Tol,This%Abs_Tol,PETSC_DEFAULT_REAL,This%Max_Its,ierr)
-  call KSPSetFromOptions(This%ksp,ierr)
+  ! call KSPSetType(this%KSP,'KSPRICHARDSON')
+  ! PetscCallA(KSPSetType(this%ksp,'python',ierr))
+  call KSPSetTolerances(this%ksp,this%Rel_Tol,this%Abs_Tol,PETSC_DEFAULT_REAL,this%Max_Its,ierr)
+  call KSPSetFromOptions(this%ksp,ierr)
+
+  if (.false.) print *, 'false'
+
 End Subroutine Create_PETSc_Ksp
 
 
-Subroutine Destroy_PETSc_Ksp(This)
-  class(pSol) :: This
+Subroutine Destroy_PETSc_Ksp(this)
+  class(pSol) :: this
   PetscErrorCode ierr
-  call KSPDestroy(This%ksp,ierr)
+  call KSPDestroy(this%ksp,ierr)
 End Subroutine Destroy_PETSc_Ksp
 
 
-Subroutine Analysis_PETSc_Ksp(This)
-  class(pSol) :: This
+Subroutine Analysis_PETSc_Ksp(this)
+  class(pSol) :: this
   PetscErrorCode ierr
   Integer :: Its, Reason
   Real(kind=dp) :: RNorm
-  Call KSPGetIterationNumber(This%ksp,Its,ierr)
-  Call KSPGetResidualNorm(This%ksp,RNorm,ierr)
-  Call KSPGetConvergedReason(This%ksp,Reason,ierr)
-  If (Reason .LT. 0) Then
+  Call KSPGetIterationNumber(this%ksp,Its,ierr)
+  Call KSPGetResidualNorm(this%ksp,RNorm,ierr)
+  Call KSPGetConvergedReason(this%ksp,Reason,ierr)
+  If (Reason < 0) Then
     Write(*,*) "---KSP Convergence Failed---"
     Write(*,*) "Failed after iterations:", Its, "with residual norm:", RNorm, "for reason:", Reason
     Write(*,*) "----------------------------"
@@ -98,7 +107,6 @@ Subroutine Analysis_PETSc_Ksp(This)
       Write(*,*) "Reason => Description not implemented"
       Write(*,*) "-------------------------------"
     End Select
-    Error Stop "KSP Convergence Failed"
   Else
     Write(*,*) "---KSP Convergence Succeeded---"
     Write(*,'(g0)',advance='no') "Succeeded after iterations:  "
@@ -125,13 +133,15 @@ Subroutine Analysis_PETSc_Ksp(This)
 End Subroutine Analysis_PETSc_Ksp
 
 
-Subroutine Solve_PETSc_Ksp(This,b,x)
-  Class(pSol) :: This
+Subroutine Solve_PETSc_Ksp(this,b,x)
+  Class(pSol) :: this
   class(pVec) :: b,x
   PetscErrorCode ierr
-  call KSpSolve(This%ksp,b%vec,x%vec,ierr); CHKERRQ(ierr)
+  ! call omp_set_num_threads(4)
+  print *, 'Solving!' 
+  call KSpSolve(this%ksp,b%vec,x%vec,ierr); CHKERRQ(ierr)
 #   ifdef DEBUG
-      call This%analysis()
+      call this%analysis()
 #   endif
 
 End Subroutine Solve_PETSc_Ksp

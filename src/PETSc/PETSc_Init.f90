@@ -10,8 +10,8 @@ contains
     If (.NOT. Called) Then
       Call PetscInitialize(PETSC_NULL_CHARACTER,ierr)
       Called = .TRUE.
-      If (ierr .NE. 0) Then
-        Error Stop "Failed to Initialize PETSc"
+      If (ierr /= 0) Then
+        Write(*,*) "Error : Failed to Initialize PETSc"
       EndIf
     EndIf
   End Subroutine PETSc_Init

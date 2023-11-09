@@ -86,8 +86,8 @@ contains
           this%FiniteVolumes(FV_ID)%dy = Sys_y / (N_y*N_Regions)
           this%FiniteVolumes(FV_ID)%Volume = this%FiniteVolumes(FV_ID)%dx * this%FiniteVolumes(FV_ID)%dy
           !! Central Position
-          this%FiniteVolumes(FV_ID)%CentralPos(0) = Origin(1) + ((jj-1) * this%FiniteVolumes(FV_ID)%dx) + (0.5_dp * this%FiniteVolumes(FV_ID)%dx)
-          this%FiniteVolumes(FV_ID)%CentralPos(1) = Origin(2) + ((ii-1) * this%FiniteVolumes(FV_ID)%dy) + (0.5_dp * this%FiniteVolumes(FV_ID)%dy) &
+          this%FiniteVolumes(FV_ID)%CentralPos(1) = Origin(1) + ((jj-1) * this%FiniteVolumes(FV_ID)%dx) + (0.5_dp * this%FiniteVolumes(FV_ID)%dx)
+          this%FiniteVolumes(FV_ID)%CentralPos(2) = Origin(2) + ((ii-1) * this%FiniteVolumes(FV_ID)%dy) + (0.5_dp * this%FiniteVolumes(FV_ID)%dy) &
                                                            + ((Region-1) * N_y * this%FiniteVolumes(FV_ID)%dy)
           !! Neighbours (0 if boundary)
           !! Left
