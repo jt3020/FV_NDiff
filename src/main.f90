@@ -12,6 +12,7 @@ Program Main
   use Solver_Mod
   use Geometry_Mod
   use Timing_Mod
+  use Output_Mod
   
   Implicit None
   
@@ -36,6 +37,9 @@ Program Main
   call MatGen%Create(Geometry)
   call MatGen%Solve(Geometry,Material,Problem,Flux)
   Write(*,'(g0)') "- NDE Solved -"
+
+  !! Generate Output
+  call GenerateVTU(Problem,Geometry,Flux)
 
   !! Destroy problem
   call MatGen%Destroy(Flux)

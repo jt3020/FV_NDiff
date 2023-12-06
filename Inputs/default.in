@@ -19,10 +19,10 @@ Length_y: - Length of system in y direction
 1.0 
 
 Refinement_x: Integer number of volumes in x per region (axially)
-5
+20
 
 Refinement_y: Integer number of volumes in y per region (vertically)
-5
+20
 
 Material Names: 1 per line, from y=0 to y=y_max
 1

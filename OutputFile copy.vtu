@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="8" NumberOfCells="2">
+      <CellData Scalars="Region, Cell ID, Scalar Flux">
+        <DataArray Name="Region" format="ascii" type="Int32" >
+          1 2
+        </DataArray>
+        <DataArray Name="Cell ID" format="ascii" type="Int32" >
+          1 2
+        </DataArray>
+        <DataArray Name="Scalar Flux" format="ascii" type="Float64" >
+            1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
+        </DataArray>
+      </CellData>
+      <Points>
+        <DataArray Name="Coordinates" NumberOfComponents="3" format="ascii" type="Float64" >
+            0.0 0.0 0.0     1.0 0.0 0.0     1.0 0.5 0.0   0.0 0.5 0.0         0.0 0.6 0.0     1.0 0.6 0.0     1.0 1.0 0.0   0.0 1.0 0.0
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int32" Name="connectivity" format="ascii">
+          0 1 2 3 4 5 6 7
+         </DataArray>
+        <DataArray type="Int32" Name="offsets" format="ascii">
+          4 8
+         </DataArray>
+          <DataArray type="Int32" Name="types" format="ascii">
+          5 5
+         </DataArray>
+      </Cells>
+    </Piece>
+  </UnstructuredGrid>
+</VTKFile>
