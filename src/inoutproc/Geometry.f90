@@ -112,13 +112,13 @@ contains
             this%FiniteVolumes(FV_ID)%Neighbours(2) = FV_ID + 1
           end if
           !! Bottom
-          if (ii == 1) then
+          if ((ii == 1) .and. (Region == 1)) then
             this%FiniteVolumes(FV_ID)%Neighbours(3) = 0
           else
             this%FiniteVolumes(FV_ID)%Neighbours(3) = FV_ID - N_x
           end if
           !! Top
-          if (ii == N_y) then
+          if ((ii == N_y) .and. (Region == N_Regions)) then
             this%FiniteVolumes(FV_ID)%Neighbours(4) = 0
           else
             this%FiniteVolumes(FV_ID)%Neighbours(4) = FV_ID + N_x
